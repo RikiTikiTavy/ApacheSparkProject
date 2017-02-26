@@ -81,28 +81,22 @@ public class Repository  {
 
 
 
-        //Customers after 35 years
-        Dataset<Row> PharmacyCustomers = spSession.sql("SELECT client_id, x, y, COUNT(client_id) AS numberOfVisits " +
+        //Make helping query to bypass the SUM(MAX(*)) condition
+        String helpingQuery = "(SELECT client_id, x, y, COUNT(client_id) AS numberOfVisits " +
                 "FROM basicTable " +
                 "WHERE " + currentAgeOfCustomer + " > " + requiredAgeOfCustomer +
                 " AND " + numOfMonth + " <= 6 " +
                 "AND " + PHARMACY_MCC +
-                " GROUP BY client_id, x, y ORDER BY client_id DESC");
+                " GROUP BY client_id, x, y ORDER BY client_id DESC)";
 
-            PharmacyCustomers.show();
-
-        PharmacyCustomers.createOrReplaceTempView("helpingQuery");
-
-        //Make helping query to bypass the SUM(MAX(*)) condition
-        Dataset<Row> PharmacyCustomersFinalTable = spSession.sql("SELECT client_id ,x, y " +
-                "FROM helpingQuery AS t1 " +
-                " join (SELECT client_id AS id, MAX(numberOfVisits) AS numOfVis FROM helpingQuery GROUP BY client_id ) AS t2 " +
+        //Customers after 35 years
+        Dataset<Row> PharmacyCustomers = spSession.sql("SELECT client_id ,x, y " +
+                "FROM " + helpingQuery + " AS t1 " +
+                " join (SELECT client_id AS id, MAX(numberOfVisits) AS numOfVis FROM " + helpingQuery + " GROUP BY client_id ) AS t2 " +
                 "on t1.client_id = t2.id AND t1.numberOfVisits = t2.numOfVis");
 
-        PharmacyCustomersFinalTable.show();
-
         // Union all the results into one table
-        resultTable = PharmacyCustomersFinalTable.union(barCustomers).orderBy("client_id");
+        resultTable = PharmacyCustomers.union(barCustomers).orderBy("client_id");
 
         return resultTable;
     }
