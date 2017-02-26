@@ -4,6 +4,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -24,12 +25,18 @@ public class SaveLoad {
 
             for (Row r : list) {
                 fileWriter.write(r.get(0) + "," + r.get(1) + "," + r.get(2) + "\n");
+
             }
             fileWriter.flush();
             fileWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+       //Delete tmp files
+        new File("data/clientsParsed.csv").delete();
+        new File("data/terminalsParsed.csv").delete();
+        new File("data/transactionsParsed.csv").delete();
     }
 
     public static String csvParser(String input) {

@@ -37,7 +37,6 @@ public class Connection {
                     .config("spark.sql.warehouse.dir", tempDir)
                     .getOrCreate();
         }
-
     }
 
     public static SparkSession getSession(String pathToWinutils) {

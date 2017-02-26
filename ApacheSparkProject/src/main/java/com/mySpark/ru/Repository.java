@@ -4,9 +4,10 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
 
+import java.util.concurrent.Callable;
 
 
-public class Repository  {
+public class Repository {
 
     private SparkSession spSession;
     private Dataset<Row> clients;
@@ -25,6 +26,7 @@ public class Repository  {
         this.clients = createDataset(pathToClientsCsv);
         this.transactions = createDataset(pathToTransactionsCsv);
         this.terminal = createDataset(pathToTerminalCsv);
+
     }
 
     public Dataset<Row> createDataset(String pathToCsv) {
@@ -32,7 +34,6 @@ public class Repository  {
 
         return dataset;
     }
-
 
     public Dataset<Row> joinDataset(Dataset<Row> one, String columnOne, Dataset<Row> two, String columnTwo) {
 
@@ -58,17 +59,13 @@ public class Repository  {
                 thirdTableJoinColumn, fourthTableJoinColumn);
 
         clientTransactionsTerminal.createOrReplaceTempView("basicTable");
-        clientTransactionsTerminal.show();
-
 
         String currentAgeOfCustomer = "(SELECT YEAR(CURRENT_DATE()) - YEAR(TO_DATE(CAST(UNIX_TIMESTAMP(date_of_birth, 'yyyy-MM-dd') AS TIMESTAMP))) " +
                 "FROM basicTable)";
 
 
         //Number of month between last transaction and current date
-
         String numOfMonth = "months_between(CURRENT_DATE(), TO_DATE(CAST(UNIX_TIMESTAMP(date, 'yyyy-MM-dd') AS TIMESTAMP)))";
-
         //Make some calculates for customers <= 35 years
         Dataset<Row> barCustomers = spSession.sql("SELECT client_id, x, y" +
                 " FROM basicTable " +
@@ -77,9 +74,6 @@ public class Repository  {
                 "AND  " + BAR_MCC +
                 " GROUP BY client_id, x, y " +
                 "HAVING SUM(amount) > 2000 AND COUNT(*) > 5");
-
-
-
 
         //Make helping query to bypass the SUM(MAX(*)) condition
         String helpingQuery = "(SELECT client_id, x, y, COUNT(client_id) AS numberOfVisits " +
@@ -100,5 +94,4 @@ public class Repository  {
 
         return resultTable;
     }
-
 }
